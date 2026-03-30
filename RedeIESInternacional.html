@@ -1,0 +1,360 @@
+<html>
+
+<a href="index.html">Voltar</a>
+    <head>
+        <meta charset="utf-8">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 750px;
+                 background-color: white;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#003366", "font": {"color": "black"}, "id": "PROPEX-DEFESA", "label": "PROPEX-DEFESA\n 32 Projeto(s)", "shape": "dot", "size": 35, "title": "Programa:PROPEX-DEFESA\npesquisas: 32\nBolsistas: 33"}, {"color": "#28A745", "font": {"color": "black"}, "id": "CUAS", "label": "CUAS\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: CUAS\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "DC", "label": "DC\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: DC\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "DU", "label": "DU\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: DU\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "EMI", "label": "EMI\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: EMI\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "FRAUNHOFER ICT", "label": "FRAUNHOFER ICT\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: FRAUNHOFER ICT\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "GMU", "label": "GMU\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: GMU\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "HSE UNIVERSITY", "label": "HSE UNIVERSITY\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: HSE UNIVERSITY\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "IADC", "label": "IADC\n 4 Bolsista(s)", "shape": "dot", "size": 26, "title": "IES: IADC\nTipo: CIVIL\npesquisas: 4\nBolsistas: 4"}, {"color": "#28A745", "font": {"color": "black"}, "id": "ISCTE", "label": "ISCTE\n 2 Bolsista(s)", "shape": "dot", "size": 20, "title": "IES: ISCTE\nTipo: CIVIL\npesquisas: 2\nBolsistas: 2"}, {"color": "#28A745", "font": {"color": "black"}, "id": "KCL", "label": "KCL\n 12 Bolsista(s)", "shape": "dot", "size": 45, "title": "IES: KCL\nTipo: CIVIL\npesquisas: 11\nBolsistas: 12"}, {"color": "#28A745", "font": {"color": "black"}, "id": "MIT", "label": "MIT\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: MIT\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "PITT", "label": "PITT\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: PITT\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "RUC", "label": "RUC\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: RUC\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "STUK", "label": "STUK\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: STUK\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "SU", "label": "SU\n 2 Bolsista(s)", "shape": "dot", "size": 20, "title": "IES: SU\nTipo: CIVIL\npesquisas: 2\nBolsistas: 2"}, {"color": "#28A745", "font": {"color": "black"}, "id": "TU DELFT", "label": "TU DELFT\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: TU DELFT\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "TUM - SCHOOL OF LIFE SCIENCES", "label": "TUM - SCHOOL OF LIFE SCIENCES\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: TUM - SCHOOL OF LIFE SCIENCES\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "TXST", "label": "TXST\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: TXST\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "UC", "label": "UC\n 4 Bolsista(s)", "shape": "dot", "size": 26, "title": "IES: UC\nTipo: CIVIL\npesquisas: 4\nBolsistas: 4"}, {"color": "#28A745", "font": {"color": "black"}, "id": "UHK", "label": "UHK\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: UHK\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "UMANITOBA", "label": "UMANITOBA\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: UMANITOBA\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "UOTTAWA", "label": "UOTTAWA\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: UOTTAWA\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "USU", "label": "USU\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: USU\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "UVA", "label": "UVA\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: UVA\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "WARW", "label": "WARW\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: WARW\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#003366", "font": {"color": "black"}, "id": "PR\u00d3-ESTRAT\u00c9GIA", "label": "PR\u00d3-ESTRAT\u00c9GIA\n 33 Projeto(s)", "shape": "dot", "size": 70, "title": "Programa:PR\u00d3-ESTRAT\u00c9GIA\npesquisas: 33\nBolsistas: 33"}, {"color": "#28A745", "font": {"color": "black"}, "id": "AIX-MARSEILLE UNIVERSIT\u00c9", "label": "AIX-MARSEILLE UNIVERSIT\u00c9\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: AIX-MARSEILLE UNIVERSIT\u00c9\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "CMU", "label": "CMU\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: CMU\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "CONCORDIA UNIVERSITY", "label": "CONCORDIA UNIVERSITY\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: CONCORDIA UNIVERSITY\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "DLR", "label": "DLR\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: DLR\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "HITOTSUBASHI UNIVERSITY", "label": "HITOTSUBASHI UNIVERSITY\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: HITOTSUBASHI UNIVERSITY\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "IASL", "label": "IASL\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: IASL\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "ICL", "label": "ICL\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: ICL\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "ISAE", "label": "ISAE\n 3 Bolsista(s)", "shape": "dot", "size": 23, "title": "IES: ISAE\nTipo: CIVIL\npesquisas: 3\nBolsistas: 3"}, {"color": "#28A745", "font": {"color": "black"}, "id": "NAMRL", "label": "NAMRL\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: NAMRL\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "NSM", "label": "NSM\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: NSM\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "SCIENCES PO", "label": "SCIENCES PO\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: SCIENCES PO\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "TAMU", "label": "TAMU\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: TAMU\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "UCM", "label": "UCM\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: UCM\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "ULISBOA", "label": "ULISBOA\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: ULISBOA\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "UMINHO", "label": "UMINHO\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: UMINHO\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "UNIVERSIDADE DE TURKU", "label": "UNIVERSIDADE DE TURKU\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: UNIVERSIDADE DE TURKU\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "UNIVERSITY OF ARIZONA", "label": "UNIVERSITY OF ARIZONA\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: UNIVERSITY OF ARIZONA\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}, {"color": "#28A745", "font": {"color": "black"}, "id": "UNL", "label": "UNL\n 2 Bolsista(s)", "shape": "dot", "size": 20, "title": "IES: UNL\nTipo: CIVIL\npesquisas: 2\nBolsistas: 2"}, {"color": "#28A745", "font": {"color": "black"}, "id": "UTADEO", "label": "UTADEO\n 1 Bolsista(s)", "shape": "dot", "size": 18, "title": "IES: UTADEO\nTipo: CIVIL\npesquisas: 1\nBolsistas: 1"}]);
+                  edges = new vis.DataSet([{"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "CUAS", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "DC", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "DU", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "EMI", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "FRAUNHOFER ICT", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "GMU", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "HSE UNIVERSITY", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "IADC", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 2\nBolsistas:2", "to": "ISCTE", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 5\nBolsistas:6", "to": "KCL", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "MIT", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "PITT", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "RUC", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "STUK", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "SU", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "TU DELFT", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "TUM - SCHOOL OF LIFE SCIENCES", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "TXST", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 3\nBolsistas:3", "to": "UC", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "UHK", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "UMANITOBA", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "UOTTAWA", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "USU", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "UVA", "width": 1}, {"color": "#C0C0C0", "from": "PROPEX-DEFESA", "title": "pesquisas: 1\nBolsistas:1", "to": "WARW", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "AIX-MARSEILLE UNIVERSIT\u00c9", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "CMU", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "CONCORDIA UNIVERSITY", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "DLR", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "HITOTSUBASHI UNIVERSITY", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 3\nBolsistas:3", "to": "IADC", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "IASL", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "ICL", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 3\nBolsistas:3", "to": "ISAE", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 6\nBolsistas:6", "to": "KCL", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "NAMRL", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "NSM", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "SCIENCES PO", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "SU", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "TAMU", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "UC", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "UCM", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "ULISBOA", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "UMINHO", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "UNIVERSIDADE DE TURKU", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "UNIVERSITY OF ARIZONA", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 2\nBolsistas:2", "to": "UNL", "width": 1}, {"color": "#C0C0C0", "from": "PR\u00d3-ESTRAT\u00c9GIA", "title": "pesquisas: 1\nBolsistas:1", "to": "UTADEO", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "forceAtlas2Based": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.01,
+            "damping": 0.4,
+            "gravitationalConstant": -50,
+            "springConstant": 0.08,
+            "springLength": 100
+        },
+        "solver": "forceAtlas2Based",
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
