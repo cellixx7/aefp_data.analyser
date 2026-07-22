@@ -1,0 +1,22 @@
+services:
+
+  db:
+    image: postgis/postgis:16-3.4
+
+    container_name: aefp-db
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: aefp
+      POSTGRES_USER: aefp
+      POSTGRES_PASSWORD: aefp
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
