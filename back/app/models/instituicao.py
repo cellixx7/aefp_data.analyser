@@ -1,5 +1,5 @@
 from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 
@@ -15,6 +15,7 @@ class Instituicao(Base):
     sigla: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
+        unique=True,
         index=True,
     )
 
@@ -31,7 +32,7 @@ class Instituicao(Base):
     )
 
     uf: Mapped[str] = mapped_column(
-        String(10),
+        String(50),
         nullable=False,
     )
 
@@ -44,4 +45,20 @@ class Instituicao(Base):
         String(50),
         nullable=False,
         index=True,
+    )
+
+    programas: Mapped[list["ProgramaDeFomento"]] = relationship(
+        back_populates="instituicao",
+    )
+
+    vinculos_como_lider: Mapped[list["BolsistaPesquisador"]] = relationship(
+        back_populates="instituicao_lider",
+        foreign_keys="BolsistaPesquisador.instituicao_lider_id",
+    )
+
+    vinculos_como_solicitante: Mapped[
+        list["BolsistaPesquisador"]
+    ] = relationship(
+        back_populates="instituicao_solicitante",
+        foreign_keys="BolsistaPesquisador.instituicao_solicitante_id",
     )
