@@ -25,3 +25,7 @@ out/
 
 # OS
 .DS_Store
+# Bases institucionais locais
+database/raw/*.xlsx
+database/raw/*.xls
+database/raw/*.csv
