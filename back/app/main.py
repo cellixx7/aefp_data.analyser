@@ -1,21 +1,23 @@
 from fastapi import FastAPI
 
-from app.db.database import engine
-from app.models.base import Base
-from app.routes.countries import router as countries_router
-from app.models.continent import Continent
-from app.models.country import Country
-
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI(
-    title="Portal AEFP API"
+    title="Portal AEFP API",
+    description="API institucional do Portal AEFP",
+    version="0.1.0",
 )
 
-app.include_router(countries_router)
 
-@app.get("/health")
-def health():
+@app.get("/")
+def root():
     return {
-        "status": "online"
+        "application": "Portal AEFP API",
+        "documentation": "/docs",
+    }
+
+
+@app.get("/health", tags=["Monitoramento"])
+def health_check():
+    return {
+        "status": "ok",
+        "application": "Portal AEFP",
     }
