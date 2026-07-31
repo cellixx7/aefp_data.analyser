@@ -8,30 +8,40 @@ class Instituicao(Base):
     __tablename__ = "instituicoes"
 
     id: Mapped[int] = mapped_column(
-        primary_key=True
+        primary_key=True,
+        autoincrement=True,
     )
 
     sigla: Mapped[str] = mapped_column(
         String(50),
-        nullable=False
+        nullable=False,
+        index=True,
     )
 
     nome_extenso: Mapped[str] = mapped_column(
         String(300),
-        nullable=False
+        nullable=False,
+        index=True,
     )
 
     pais: Mapped[str] = mapped_column(
         String(100),
-        nullable=False
+        nullable=False,
+        index=True,
     )
 
-    uf: Mapped[str | None] = mapped_column(
+    uf: Mapped[str] = mapped_column(
         String(10),
-        nullable=True
+        nullable=False,
+    )
+
+    tipo_ies: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
     )
 
     continente: Mapped[str] = mapped_column(
         String(50),
-        nullable=False
+        nullable=False,
+        index=True,
     )
